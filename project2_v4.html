@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Breckinridge Explorer</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="description" content="" />
+
+  <link rel="stylesheet" href="https://js.arcgis.com/4.25/esri/themes/light/main.css">
+  <script src="https://js.arcgis.com/4.28/"></script>
+
+  <style>
+    html,
+    body,
+    #viewDiv{
+      padding: 0;
+      margin: 0;
+      height: 100%;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #header {
+        position: relative;
+        background-color: #002868;
+        height: 60px;
+        display: flex;
+        align-items: center;
+        justify-content: left;
+        overflow: hidden;
+        font-family: sans-serif;
+    }
+
+    #header .bar {
+        position: absolute;
+        background-color: white;
+        height: 12px;
+        width: 100%;
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 1;
+    }
+
+    #header h1 {
+        position: relative;
+        z-index: 2;
+        color: #FFD700;
+        margin: 0;
+        font-size: 40px;
+        text-shadow:
+            -2px -2px 0 #BF0A30,
+            2px -2px 0 #BF0A30,
+            -2px  2px 0 #BF0A30,
+            2px  2px 0 #BF0A30,
+            0px -2px 0 #BF0A30,
+            2px  0px 0 #BF0A30,
+            0px  2px 0 #BF0A30,
+            -2px  0px 0 #BF0A30;
+    }
+
+    .help-banner {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      background-color: #faf6f6;
+      color: rgb(243, 6, 6);
+      text-align: center;
+      padding: 1em;
+      z-index: 9999;
+    }
+
+  </style>
+
+  <script>  
+    //adds widgets and functions to the map
+    require([
+      "esri/config",
+      "esri/Map", 
+      "esri/views/SceneView", 
+      "esri/widgets/BasemapGallery",
+      "esri/widgets/Locate",
+      "esri/widgets/Search",  
+      "esri/layers/FeatureLayer",
+      "esri/widgets/Legend",
+      "esri/widgets/Expand",
+      "esri/widgets/LayerList",
+      "esri/widgets/Home",
+      "esri/renderers/SimpleRenderer",
+      "esri/symbols/PictureMarkerSymbol",
+      "esri/Basemap"
+    ], function(esriConfig, Map, SceneView, BasemapGallery, Locate, Search, FeatureLayer, Legend, Expand, LayerList, Home, SimpleRenderer, PictureMarkerSymbol, Basemap) {   
+
+      //api key and basemap layer set
+      esriConfig.apiKey = "AAPTxy8BH1VEsoebNVZXo8HurFa5WfXMQlRQPnfNYzLFFYga1fw0U3EB74KznnD3Q-j0AB9HdCmpOghHtkHppjTP_28Gd65ao6PCq3TkG0tJ3hZXDgrukv8aAoFxebfSdW8q97PlMsrfq7nQ5seQfazEIltTu-OWRzaW7f4FLTvO2sPZ-GI21IUJHlx3EgphVNeA0XX7woV69BRNK0kyac0EPDamoSzTK8mrrLhPaWW2zQiKQ4JWB0Okf4wgrn3A9wN3AT1_R7CKhNBZ"
+      
+      var map = new Map({
+        basemap: "dark-gray",
+        ground: "world-elevation"
+      });
+
+      var view = new SceneView({
+        container: "viewDiv",
+        map: map,
+        camera: {
+          position: {
+            x: -105.97,
+            y: 39.515,
+            z: 8000
+          },
+          heading: 245,
+          tilt: 65
+        }
+      });
+      
+      // Custom Basemap Gallery Source
+      const customBasemaps = [
+        Basemap.fromId("topo"),
+        Basemap.fromId("terrain"),
+        Basemap.fromId("oceans"),
+        Basemap.fromId("dark-gray"),
+        Basemap.fromId("national-geographic")
+      ]
+      .filter(b => b !== null);
+
+      const basemapGallery = new BasemapGallery({
+        view: view,
+        source: customBasemaps
+      });
+
+      const homeWidget = new Home({
+        view: view
+      });
+
+    //ski runs layer
+    const skiRuns = new FeatureLayer({
+        url: "https://services.arcgis.com/HRPe58bUyBqyyiCt/arcgis/rest/services/ski_runs_merged/FeatureServer",
+        title: "Ski Runs", 
+        outFields: ["*"],
+        renderer: {
+            type: "unique-value",
+            field: "skill_leve",
+            defaultSymbol: {
+            type: "simple-line",
+            color: "gray",
+            width: 2
+            },
+            defaultLabel: "Unknown Skill Level",
+            uniqueValueInfos: [
+            {
+                value: "1",
+                symbol: {
+                type: "simple-line",
+                color: "green",
+                width: 1.5
+                },
+                label: "🟢 Beginner"
+            },
+            {
+                value: "2",
+                symbol: {
+                type: "simple-line",
+                color: "blue",
+                width: 1.5
+                },
+                label: "🟦 Intermediate"
+            },
+            {
+                value: "3",
+                symbol: {
+                type: "simple-line",
+                color: "black",
+                width: 1.5
+                },
+                label: "◆ Advanced"
+            },
+            {
+                value: "4",
+                symbol: {
+                type: "simple-line",
+                color: "black",
+                width: 1.5,
+                style: "dash"
+                },
+                label: "◆◆ Expert"
+            }
+            ]
+        },
+        elevationInfo: {
+            mode: "relative-to-ground",
+            offset: 7
+        },
+        minScale: 0,
+        maxScale: 0,
+        popupTemplate: {
+            title: "{name}",
+            content: `
+                <b>Name:</b> {name}<br>
+                <b>Avg Speed:</b> {expression/roundedSpeed} mph<br>
+                <b>Slope:</b> {expression/roundedSlope}°`,
+            expressionInfos: [
+                {
+                name: "roundedSpeed",
+                title: "Rounded Speed",
+                expression: "Round($feature.avg_spd, 2)"
+                },
+                {
+                name: "roundedSlope",
+                title: "Rounded Slope",
+                expression: "Round($feature.slope, 2)"
+                }
+            ]
+            }
+
+        });
+
+    //ski lifts layer
+    const skiLifts = new FeatureLayer({
+        url: "https://services.arcgis.com/HRPe58bUyBqyyiCt/arcgis/rest/services/charlift_merge/FeatureServer",
+        title: "ChairLifts", 
+        outFields: ["*"],
+        renderer: {
+          type: "simple",
+          symbol: {
+            type: "simple-line",
+            color: "red",
+            width: 2
+          }
+        },
+        elevationInfo: {
+          mode: "relative-to-ground",
+          offset: 10
+        },
+        minScale: 0,
+        maxScale: 0,
+        popupTemplate: {
+          title: "{name}",
+          content: `
+            <b>Name:</b> {name}<br>
+            <b>Type:</b> {type}<br>`
+        }
+      });
+
+
+    //retail renderer and symbology for map
+    //icons from google fonts
+    const retailRenderer = {
+      type: "simple",
+      symbol: {
+        type: "point-3d",
+        symbolLayers: [{
+          type: "icon",
+          resource: {
+            href: "https://raw.githubusercontent.com/kmbursaw/geog777_proj2/main/storefront_24dp_1F1F1F_white_stroked.png",
+          },
+          size: 20,
+          outline: { color: "black", size: 1 }
+        }],
+        verticalOffset: {
+          screenLength: 45,
+          maxWorldLength: 500,
+          minWorldLength: 30
+        },
+        callout: {
+          type: "line",
+          size: 0.5,
+          color: "black"
+        }
+      }
+  };
+
+    //retail layer
+    const retail = new FeatureLayer({
+        url: "https://services.arcgis.com/HRPe58bUyBqyyiCt/arcgis/rest/services/Retail/FeatureServer",
+        title: "Retail", 
+        outFields: ["*"],
+        renderer: retailRenderer,
+        elevationInfo: {
+          mode: "relative-to-ground",
+          offset: 10
+        },
+        minScale: 0,
+        maxScale: 0,
+        popupTemplate: {
+          title: "{name}",
+          content: `
+            <b>Name:</b> {name}<br>
+            <b>Phone:</b> {phone}<br>
+            <b>Website:</b> {website}<br>
+            <b>Rating:</b> {rating} stars<br>
+            <div class="star-rating" id="rating-{OBJECTID}"></div>`
+        }
+      });
+
+      //food and beverage renderer and symbology for map
+      //icons from google fonts
+      const foodRenderer = {
+        type: "simple",
+          symbol: {
+            type: "point-3d",
+            symbolLayers: [{
+              type: "icon",
+              resource: {
+                href: "https://raw.githubusercontent.com/kmbursaw/geog777_proj2/main/restaurant_24dp_1F1F1F_white_stroked.png"
+              },
+              size: 20,
+              outline: { color: "black", size: 1 }
+            }],
+            verticalOffset: {
+              screenLength: 20,
+              maxWorldLength: 500,
+              minWorldLength: 30
+            },
+            callout: {
+              type: "line",
+              size: 0.5,
+              color: "black"
+            }
+          }
+      }
+      
+      //food and beverage layer
+      const foodBeverage = new FeatureLayer({
+        url: "https://services.arcgis.com/HRPe58bUyBqyyiCt/arcgis/rest/services/Food_and_Beverage/FeatureServer",
+        title: "Food/Beverage", 
+        outFields: ["*"],
+        renderer: foodRenderer,
+        elevationInfo: {
+          mode: "relative-to-ground",
+          offset: 10
+        },
+        minScale: 0,
+        maxScale: 0,
+        popupTemplate: {
+          title: "{name}",
+          content: `
+            <b>Name:</b> {name}<br>
+            <b>Phone:</b> {phone}<br>
+            <b>Website:</b> {website}<br>`
+        }
+      });
+
+      //first aid renderer and symbology for map
+      //icons from google fonts
+      const medicalRenderer = {
+        type: "simple",
+          symbol: {
+            type: "point-3d",
+            symbolLayers: [{
+              type: "icon",
+              resource: {
+                href: "https://raw.githubusercontent.com/kmbursaw/geog777_proj2/main/local_hospital_24dp_1F1F1F_white_stroked.png",
+              },
+              size: 25
+            }],
+            verticalOffset: {
+              screenLength: 70,
+              maxWorldLength: 500,
+              minWorldLength: 30
+            },
+            callout: {
+              type: "line",
+              size: 0.5,
+              color: "black"
+            }
+          }
+      }
+
+      //first aid layer
+      const medical = new FeatureLayer({
+        url: "https://services.arcgis.com/HRPe58bUyBqyyiCt/arcgis/rest/services/First_Aid/FeatureServer",
+        renderer: medicalRenderer,
+        title: "First Aid/Ski Patrol", 
+        outFields: ["*"],
+        elevationInfo: {
+          mode: "relative-to-ground",
+          offset: 10
+        },
+        minScale: 0,
+        maxScale: 0,
+        popupTemplate: {
+          title: "{name}",
+          content: `
+            <b>Name:</b> {name}<br>
+            <b>Phone:</b> {phone}<br>
+            <b>Website:</b> {website}<br>`
+        }
+      });
+
+      //renderer for emergency layer
+      //icons from google fonts
+      const emergencyRenderer = {
+        type: "simple",
+        symbol: {
+          type: "point-3d",
+          symbolLayers: [{
+            type: "icon",
+            resource: {
+              href: "https://raw.githubusercontent.com/kmbursaw/geog777_proj2/main/personal_injury_24dp_1F1F1F_white_stroked.png"
+            },
+            size: 20,
+            outline: { color: "black", size: 1 }
+          }],
+          verticalOffset: {
+            screenLength: 70,
+            maxWorldLength: 500,
+            minWorldLength: 30
+          },
+          callout: {
+            type: "line",
+            size: 0.5,
+            color: "black"
+          }
+        }
+      };
+
+      //emergency layer
+      const emergency = new FeatureLayer({
+        url: "https://services.arcgis.com/HRPe58bUyBqyyiCt/arcgis/rest/services/survey123_180e0da84b7c4a80925af57f53e61e58/FeatureServer",
+        title: "HELP NEEDED", 
+        outFields: ["*"],
+        renderer: emergencyRenderer,
+        elevationInfo: {
+          mode: "relative-to-ground",
+          offset: 10
+        },
+        minScale: 0,
+        maxScale: 0,
+        popupTemplate: {
+          title: "{name}",
+          content: `
+            <b>Date/Time:</b> {Current Date and Time of Report}<br>
+            <b>Description:</b> {Description of Accident}<br>`
+        }
+      });
+
+    //peak lables for mountains  
+    const peaks = [
+        {
+            geometry: {
+            type: "point",
+            longitude: -106.11139,
+            latitude: 39.49363,
+            z: 4700
+            },
+            attributes: { Name: "Peak 6", ObjectID: 1 }
+        },
+        {
+            geometry: {
+            type: "point",
+            longitude: -106.105404,
+            latitude: 39.478426,
+            z: 4700
+            },
+            attributes: { Name: "Peak 7", ObjectID: 2 }
+        },
+        {
+            geometry: {
+            type: "point",
+            longitude: -106.1023,
+            latitude: 39.4707,
+            z: 4700
+            },
+            attributes: { Name: "Peak 8", ObjectID: 3 }
+        },
+        {
+            geometry: {
+            type: "point",
+            longitude: -106.10534,
+            latitude: 39.45172,
+            z: 4700
+            },
+            attributes: { Name: "Peak 9", ObjectID: 4 }
+        },
+        {
+            geometry: {
+            type: "point",
+            longitude: -106.10277,
+            latitude: 39.44329,
+            z: 4700
+            },
+            attributes: { Name: "Peak 10", ObjectID: 5 }
+        }
+        ];
+
+    const peakLabelsLayer = new FeatureLayer({
+        source: peaks,
+        title: "Peak Labels",
+        objectIdField: "ObjectID",
+        fields: [
+            { name: "ObjectID", type: "oid" },
+            { name: "Name", type: "string" }
+        ],
+        geometryType: "point",
+        spatialReference: { wkid: 4326 },
+        elevationInfo: {
+            mode: "absolute-height"
+        },
+        renderer: {
+            type: "simple",
+            symbol: {
+            type: "simple-marker",
+            color: [0, 0, 0, 0],
+            size: 1
+            }
+        },
+        labelingInfo: [{
+            labelExpressionInfo: {
+            expression: "$feature.Name"
+            },
+            labelPlacement: "center-center",
+            symbol: {
+            type: "text",
+            color: "white",
+            haloColor: "black",
+            haloSize: "5px",
+            font: {
+                family: "sans-serif",
+                weight: "bold"
+            }
+            },
+            //dynamically scale font size with zoom level
+            visualVariables: [{
+            type: "size",
+            valueExpression: "$view.scale",
+            stops: [
+                { value: 100000, size: 20 },
+                { value: 500000, size: 16 },
+                { value: 1000000, size: 12 },
+                { value: 2000000, size: 10 }
+            ]
+            }]
+        }],
+        labelsVisible: true
+        });
+
+
+    //adds legend
+    const legend = new Legend({
+        view: view,
+        layerInfos: [
+            {
+                layer: skiRuns
+            },
+            {
+                layer: skiLifts
+            },
+            {
+                layer: retail
+            },
+            {
+                layer: foodBeverage
+            },
+            {
+                layer: medical
+            },
+            {
+                layer: emergency
+            }
+        ]
+    });
+
+    const legendExpand = new Expand({
+        view: view,
+        content: legend,
+        expanded: false,
+        expandIconClass: "esri-icon-legend",
+        expandTooltip: "Legend"
+    });
+
+    view.ui.add(legendExpand, "top-left");
+
+    const layerList = new LayerList({
+        view: view
+    });
+
+    const layerListExpand = new Expand({
+        view: view,
+        content: layerList,
+        expanded: false,
+        expandIconClass: "esri-icon-layer-list",
+        expandTooltip: "Layer List"
+    });
+
+    view.ui.add(layerListExpand, "top-left");
+    view.ui.add(homeWidget, "top-left");
+
+
+      //add feature layers to the map
+      map.add(skiRuns);
+      map.add(skiLifts);
+      map.add(retail);
+      map.add(foodBeverage)
+      map.add(peakLabelsLayer);
+      map.add(medical);
+      map.add(emergency);
+
+      //search list sources
+      const retailSearchSource = {
+        layer: retail,
+        searchFields: ["name"],
+        displayField: "name",
+        exactMatch: false,
+        outFields: ["*"],
+        name: "Retail Stores",
+        placeholder: "Search Retail..."
+      };
+
+      const skirunsSearchSource = {
+        layer: skiRuns,
+        searchFields: ["name"],
+        displayField: "name",
+        exactMatch: false,
+        outFields: ["*"],
+        name: "Ski Runs",
+        placeholder: "Search Runs..."
+      };
+
+      const skiliftsSearchSource = {
+        layer: skiLifts,
+        searchFields: ["name"],
+        displayField: "name",
+        exactMatch: false,
+        outFields: ["*"],
+        name: "Lifts",
+        placeholder: "Search Lifts..."
+      };
+
+      const foodbeverageSearchSource = {
+        layer: skiLifts,
+        searchFields: ["name"],
+        displayField: "name",
+        exactMatch: false,
+        outFields: ["*"],
+        name: "Food/Beverage",
+        placeholder: "Search Food/Beverage..."
+      };
+
+
+      //adds locate widget
+      const locateWidget = new Locate({ view: view });
+      view.ui.add(locateWidget, "top-left");
+
+      //adds search widget
+      const searchWidget = new Search({ 
+        view: view,
+        sources: [retailSearchSource, skirunsSearchSource, skiliftsSearchSource, foodbeverageSearchSource]
+      });
+      view.ui.add(searchWidget, "top-right");
+
+      //add basemap gallery
+      const basemapGalleryExpand = new Expand({
+        view: view,
+        content: basemapGallery,
+        expanded: false,
+        expandIconClass: "esri-icon-basemap",
+        expandTooltip: "Basemap Gallery"
+      });
+
+      view.ui.add(basemapGalleryExpand, "top-left");
+
+
+      //debugging
+      retail.when(() => {
+        console.log("Feature Layer Loaded Successfully:", retail);
+      }).catch((err) => {
+        console.error("Feature Layer Failed to Load:", err);
+      });
+     
+
+
+    });
+    
+
+
+    </script>
+
+
+</head>
+<body>
+
+<div id="header">
+    <div class="bar"></div>
+    <h1>Breckinridge Explorer</h1>
+</div>
+
+  <div id="viewDiv"></div>
+  <div id="basemapGalleryDiv"></div>
+  <div class="help-banner">
+    EMERGENCY HELP NEEDED <a href="https://arcg.is/1PynTH1" target="_blank">Click Here!!!</a>
+  </div>
+
+</body>
+</html>
