@@ -69,6 +69,7 @@
       padding-bottom: 50px;
     }
 
+    /* help banner styling */
     .help-banner {
       position: fixed;
       bottom: 0;
@@ -137,11 +138,13 @@
       //api key and basemap layer set
       esriConfig.apiKey = "AAPTxy8BH1VEsoebNVZXo8HurFa5WfXMQlRQPnfNYzLFFYga1fw0U3EB74KznnD3Q-j0AB9HdCmpOghHtkHppjTP_28Gd65ao6PCq3TkG0tJ3hZXDgrukv8aAoFxebfSdW8q97PlMsrfq7nQ5seQfazEIltTu-OWRzaW7f4FLTvO2sPZ-GI21IUJHlx3EgphVNeA0XX7woV69BRNK0kyac0EPDamoSzTK8mrrLhPaWW2zQiKQ4JWB0Okf4wgrn3A9wN3AT1_R7CKhNBZ"
       
+      //creates map
       var map = new Map({
         basemap: "terrain",
         ground: "world-elevation"
       });
 
+      //limits extent of map
       const extent = new Extent({
         xmin: -106.0,
         xmax: -105.85,
@@ -150,6 +153,7 @@
         spatialReference: { wkid: 4326 }
       });
 
+      //creates sceneview and adds contraints
       var view = new SceneView({
         container: "viewDiv",
         map: map,
@@ -207,7 +211,7 @@
         }
       });
       
-      // Custom Basemap Gallery Source
+      //custom basemap gallery options
       const customBasemaps = [
         Basemap.fromId("topo"),
         Basemap.fromId("terrain"),
@@ -573,6 +577,7 @@
         }
         ];
 
+    //adds peak lables
     const peakLabelsLayer = new FeatureLayer({
         source: peaks,
         title: "Peak Labels",
@@ -609,7 +614,7 @@
                 weight: "bold"
             }
             },
-            //dynamically scale font size with zoom level
+            //dynamically scales font size with zoom level
             visualVariables: [{
             type: "size",
             valueExpression: "$view.scale",
@@ -650,6 +655,7 @@
         ]
     });
 
+    //allows legend to expand
     const legendExpand = new Expand({
         view: view,
         content: legend,
@@ -658,12 +664,15 @@
         expandTooltip: "Legend"
     });
 
+    //adds legend
     view.ui.add(legendExpand, "top-left");
 
+    //creates layer list for ui
     const layerList = new LayerList({
         view: view
     });
 
+    //allows layer list to expand
     const layerListExpand = new Expand({
         view: view,
         content: layerList,
@@ -672,6 +681,7 @@
         expandTooltip: "Layer List"
     });
 
+    //adds layer list expand and home widgets
     view.ui.add(layerListExpand, "top-left");
     view.ui.add(homeWidget, "top-left");
 
@@ -754,9 +764,9 @@
 
     //debugging
     retail.when(() => {
-      console.log("Feature Layer Loaded Successfully:", retail);
-    }).catch((err) => {
-      console.error("Feature Layer Failed to Load:", err);
+      //console.log("Feature Layer Loaded Successfully:", retail);
+    //}).catch((err) => {
+      //console.error("Feature Layer Failed to Load:", err);
     });
     
     document.getElementById("continueButton").addEventListener("click", () => {
