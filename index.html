@@ -18,55 +18,55 @@
       height: 100%;
       margin: 0;
     }
-    .container-fluid, .row, .col-md-12 {
-      height: 100%;
-    }
 
-    #viewDiv {
-      padding: 0;
-      margin: 0;
-      height: 100%;
-      width: 100%;
+    #app {
       display: flex;
       flex-direction: column;
+      height: 100vh;
     }
 
     #header {
-        position: relative;
-        background-color: #002868;
-        height: 60px;
-        display: flex;
-        align-items: center;
-        justify-content: left;
-        overflow: hidden;
-        font-family: sans-serif;
+      background-color: #002868;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: left;
+      font-family: sans-serif;
+      position: relative;
+      z-index: 10;
     }
 
     #header .bar {
-        position: absolute;
-        background-color: white;
-        height: 12px;
-        width: 100%;
-        top: 50%;
-        transform: translateY(-50%);
-        z-index: 1;
+      position: absolute;
+      background-color: white;
+      height: 12px;
+      width: 100%;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 1;
     }
 
     #header h1 {
-        position: relative;
-        z-index: 2;
-        color: #FFD700;
-        margin: 0;
-        font-size: 40px;
-        text-shadow:
-            -2px -2px 0 #BF0A30,
-            2px -2px 0 #BF0A30,
-            -2px  2px 0 #BF0A30,
-            2px  2px 0 #BF0A30,
-            0px -2px 0 #BF0A30,
-            2px  0px 0 #BF0A30,
-            0px  2px 0 #BF0A30,
-            -2px  0px 0 #BF0A30;
+      position: relative;
+      z-index: 2;
+      color: #FFD700;
+      margin: 0;
+      font-size: 40px;
+      text-shadow:
+        -2px -2px 0 #BF0A30,
+        2px -2px 0 #BF0A30,
+        -2px  2px 0 #BF0A30,
+        2px  2px 0 #BF0A30,
+        0px -2px 0 #BF0A30,
+        2px  0px 0 #BF0A30,
+        0px  2px 0 #BF0A30,
+        -2px  0px 0 #BF0A30;
+    }
+
+    #viewDiv {
+      flex: 1;
+      width: 100%;
+      padding-bottom: 50px;
     }
 
     .help-banner {
@@ -79,6 +79,37 @@
       text-align: center;
       padding: 1em;
       z-index: 9999;
+    }
+
+    /* splash screen styling */
+    .splash-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 40, 104, 0.95);
+      color: white;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 10000;
+      text-align: center;
+      padding: 20px;
+    }
+
+    .splash-content {
+      max-width: 500px;
+    }
+
+    .splash-content h2 {
+      font-size: 2rem;
+      margin-bottom: 1rem;
+      color: #FFD700;
+    }
+
+    .splash-content p {
+      font-size: 1rem;
     }
 
   </style>
@@ -99,15 +130,24 @@
       "esri/widgets/Home",
       "esri/renderers/SimpleRenderer",
       "esri/symbols/PictureMarkerSymbol",
-      "esri/Basemap"
-    ], function(esriConfig, Map, SceneView, BasemapGallery, Locate, Search, FeatureLayer, Legend, Expand, LayerList, Home, SimpleRenderer, PictureMarkerSymbol, Basemap) {   
+      "esri/Basemap",
+      "esri/geometry/Extent"
+    ], function(esriConfig, Map, SceneView, BasemapGallery, Locate, Search, FeatureLayer, Legend, Expand, LayerList, Home, SimpleRenderer, PictureMarkerSymbol, Basemap, Extent) {   
 
       //api key and basemap layer set
       esriConfig.apiKey = "AAPTxy8BH1VEsoebNVZXo8HurFa5WfXMQlRQPnfNYzLFFYga1fw0U3EB74KznnD3Q-j0AB9HdCmpOghHtkHppjTP_28Gd65ao6PCq3TkG0tJ3hZXDgrukv8aAoFxebfSdW8q97PlMsrfq7nQ5seQfazEIltTu-OWRzaW7f4FLTvO2sPZ-GI21IUJHlx3EgphVNeA0XX7woV69BRNK0kyac0EPDamoSzTK8mrrLhPaWW2zQiKQ4JWB0Okf4wgrn3A9wN3AT1_R7CKhNBZ"
       
       var map = new Map({
-        basemap: "dark-gray",
+        basemap: "terrain",
         ground: "world-elevation"
+      });
+
+      const extent = new Extent({
+        xmin: -106.0,
+        xmax: -105.85,
+        ymin: 39.4,
+        ymax: 39.6,
+        spatialReference: { wkid: 4326 }
       });
 
       var view = new SceneView({
@@ -121,9 +161,38 @@
           },
           heading: 245,
           tilt: 65
+        },
+        constraints: {
+          altitude: {
+            min: 3000,
+            max: 10000
+          },
+          geometry: {
+            spatialReference: { wkid: 4326 },
+            xmin: -106.0,
+            xmax: -105.85,
+            ymin: 39.4,
+            ymax: 39.6
+          },
+          geometry: extent
         }
       });
 
+
+
+      //for mobile views this makes the popup docked at the bottom right to help not be obscured by the need help banner
+      view.when(() => {
+        if (window.innerWidth < 768) {
+          view.popup.dockEnabled = true;
+          view.popup.dockOptions = {
+            position: "bottom-right",
+            breakpoint: false
+          };
+        }
+      });
+
+
+      //looks for mobile screen and adjusts screen accordingly
       view.when(() => {
         if (window.innerWidth < 768) {
           view.goTo({
@@ -142,9 +211,7 @@
       const customBasemaps = [
         Basemap.fromId("topo"),
         Basemap.fromId("terrain"),
-        Basemap.fromId("oceans"),
-        Basemap.fromId("dark-gray"),
-        Basemap.fromId("national-geographic")
+        Basemap.fromId("oceans")
       ]
       .filter(b => b !== null);
 
@@ -311,9 +378,7 @@
           content: `
             <b>Name:</b> {name}<br>
             <b>Phone:</b> {phone}<br>
-            <b>Website:</b> {website}<br>
-            <b>Rating:</b> {rating} stars<br>
-            <div class="star-rating" id="rating-{OBJECTID}"></div>`
+            <b>Website:</b> {website}<br>`
         }
       });
 
@@ -611,115 +676,123 @@
     view.ui.add(homeWidget, "top-left");
 
 
-      //add feature layers to the map
-      map.add(skiRuns);
-      map.add(skiLifts);
-      map.add(retail);
-      map.add(foodBeverage)
-      map.add(peakLabelsLayer);
-      map.add(medical);
-      map.add(emergency);
+    //add feature layers to the map
+    map.add(skiRuns);
+    map.add(skiLifts);
+    map.add(retail);
+    map.add(foodBeverage)
+    map.add(peakLabelsLayer);
+    map.add(medical);
+    map.add(emergency);
 
-      //search list sources
-      const retailSearchSource = {
-        layer: retail,
-        searchFields: ["name"],
-        displayField: "name",
-        exactMatch: false,
-        outFields: ["*"],
-        name: "Retail Stores",
-        placeholder: "Search Retail..."
-      };
+    //search list sources
+    const retailSearchSource = {
+      layer: retail,
+      searchFields: ["name"],
+      displayField: "name",
+      exactMatch: false,
+      outFields: ["*"],
+      name: "Retail Stores",
+      placeholder: "Search Retail..."
+    };
 
-      const skirunsSearchSource = {
-        layer: skiRuns,
-        searchFields: ["name"],
-        displayField: "name",
-        exactMatch: false,
-        outFields: ["*"],
-        name: "Ski Runs",
-        placeholder: "Search Runs..."
-      };
+    const skirunsSearchSource = {
+      layer: skiRuns,
+      searchFields: ["name"],
+      displayField: "name",
+      exactMatch: false,
+      outFields: ["*"],
+      name: "Ski Runs",
+      placeholder: "Search Runs..."
+    };
 
-      const skiliftsSearchSource = {
-        layer: skiLifts,
-        searchFields: ["name"],
-        displayField: "name",
-        exactMatch: false,
-        outFields: ["*"],
-        name: "Lifts",
-        placeholder: "Search Lifts..."
-      };
+    const skiliftsSearchSource = {
+      layer: skiLifts,
+      searchFields: ["name"],
+      displayField: "name",
+      exactMatch: false,
+      outFields: ["*"],
+      name: "Lifts",
+      placeholder: "Search Lifts..."
+    };
 
-      const foodbeverageSearchSource = {
-        layer: foodBeverage,
-        searchFields: ["name"],
-        displayField: "name",
-        exactMatch: false,
-        outFields: ["*"],
-        name: "Food/Beverage",
-        placeholder: "Search Food/Beverage..."
-      };
-
-
-      //adds locate widget
-      const locateWidget = new Locate({ view: view });
-      view.ui.add(locateWidget, "top-left");
-
-      //adds search widget
-      const searchWidget = new Search({ 
-        view: view,
-        sources: [retailSearchSource, skirunsSearchSource, skiliftsSearchSource, foodbeverageSearchSource]
-      });
-      view.ui.add(searchWidget, "top-right");
-
-      //add basemap gallery
-      const basemapGalleryExpand = new Expand({
-        view: view,
-        content: basemapGallery,
-        expanded: false,
-        expandIconClass: "esri-icon-basemap",
-        expandTooltip: "Basemap Gallery"
-      });
-
-      view.ui.add(basemapGalleryExpand, "top-left");
-
-      //debugging
-      retail.when(() => {
-        console.log("Feature Layer Loaded Successfully:", retail);
-      }).catch((err) => {
-        console.error("Feature Layer Failed to Load:", err);
-      });
-     
+    const foodbeverageSearchSource = {
+      layer: foodBeverage,
+      searchFields: ["name"],
+      displayField: "name",
+      exactMatch: false,
+      outFields: ["*"],
+      name: "Food/Beverage",
+      placeholder: "Search Food/Beverage..."
+    };
 
 
+    //adds locate widget
+    const locateWidget = new Locate({ view: view });
+    view.ui.add(locateWidget, "top-left");
+
+
+    //adds search widget
+    const searchWidget = new Search({ 
+      view: view,
+      sources: [retailSearchSource, skirunsSearchSource, skiliftsSearchSource, foodbeverageSearchSource]
     });
+    view.ui.add(searchWidget, "top-right");
+
+
+    
+    //add basemap gallery
+    const basemapGalleryExpand = new Expand({
+      view: view,
+      content: basemapGallery,
+      expanded: false,
+      expandIconClass: "esri-icon-basemap",
+      expandTooltip: "Basemap Gallery"
+    });
+
+    view.ui.add(basemapGalleryExpand, "top-left");
+
+    //debugging
+    retail.when(() => {
+      console.log("Feature Layer Loaded Successfully:", retail);
+    }).catch((err) => {
+      console.error("Feature Layer Failed to Load:", err);
+    });
+    
+    document.getElementById("continueButton").addEventListener("click", () => {
+    document.getElementById("splashScreen").style.display = "none";
+    });
+
+  });
   
     </script>
 
 
 </head>
 <body>
-
-<div id="header">
-    <div class="bar"></div>
-    <h1>Breckinridge Explorer</h1>
-</div>
-
-
-
-<div class="container-fluid">
-  <div class="row">
-    <div class="col-md-12">
-      <div id="viewDiv">
+  <div id="app">
+    <div id="splashScreen" class="splash-screen">
+      <div class="splash-content">
+        <h2>Welcome to Breckinridge Explorer</h2>
+        <p>Explore the Breckinridge, Colorado Ski Resort! In this app you can see a 3D view of the entire resport
+          and explore the ski runs, lifts, dining options, and first aid/emergency options available to you on your visit.
+          This app is intended to be used when you are stationary and in a safe place to do so. DO NOT use while actively skiing/snowboarding.
+          Click continue to begin.</p>
+        <button id="continueButton" class="btn btn-primary mt-3">Continue</button>
       </div>
     </div>
-  </div>
-</div>
-  <div id="basemapGalleryDiv"></div>
-  <div class="help-banner">
-    EMERGENCY HELP NEEDED <a href="https://arcg.is/1PynTH1" target="_blank">Click Here!!!</a>
-  </div>
+    <div id="header">
+        <div class="bar"></div>
+        <h1>Breckinridge Explorer</h1>
+    </div>
 
+
+
+    <div id="viewDiv"></div>
+      <div id="basemapGalleryDiv"></div>
+      <div class="help-banner">
+        EMERGENCY HELP NEEDED <a href="https://arcg.is/1PynTH1" target="_blank">Click Here!!!</a>
+      </div>
+  </div>
 </body>
 </html>
